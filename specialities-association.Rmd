@@ -24,9 +24,10 @@ knitr::opts_chunk$set(echo = TRUE)
 # Introducció
 ******
 ## Presentació
-Aquest exercici tracta de trobar una relació entre les especialitats escollides entre el advocats de la plataforma per tal de suggerir a partir dels patrons proposats per els propis usuaris de la plataforma. 
+Aquest estudi tracta de trobar una relació entre les especialitats escollides entre el advocats de la plataforma per tal de suggerir a partir dels patrons proposats per els propis usuaris de la plataforma. 
 
 El primer que fem es carregar les llibreries que es necessiten
+
 
 ```{r message= FALSE, warning=FALSE}
 library(cluster)
@@ -36,7 +37,6 @@ library(purrr)
 library(ggplot2)
 library(factoextra)
 library(mclust)
-library(fpc)
 library(arules)
 ```
 
@@ -105,21 +105,20 @@ itemFrequencyPlot(speciality.transactions, support = .1, cex.names = .6, col = r
 ```
 
 
-Mostrem les especialitata que més es repeteixen. En concret estem mostrant aquells que tenen un suport o freqüencia >= 0.1. Si tenim 15000 transaccions, estem mostrant x >= 15.000 * 0.1, es a dir aquells que apareixen com a mínim 1050 vegades.
+Mostrem les especialitats que més es repeteixen. En concret estem mostrant aquells que tenen un suport o freqüencia >= 0.1. Si tenim 15000 transaccions, estem mostrant x >= 15.000 * 0.1, es a dir aquells que apareixen com a mínim 1050 vegades.
 
 Les especialitats que més és repeteixes són: Divorcios, Civil, Familia, Penal...
-
 
 ## Aplicació d'algoritme apriori 
 Si llancem l'algoritme "apriori", generarem directament un set de regles amb diferent suport, confiança i lift. 
 
-* El *support* indica quantes vegades s'han trovat les regles {lsh => rhs} en el dataset, com més alt millor. Es la "popularitat" d'un conjunt d'elements del dataset. On {lsh => rhs} indica que si s'escolta lsh, s'escolta rhs.
+* El *support* indica quantes vegades s'han trovat les regles {lsh => rhs} en el dataset, com més alt millor. Es la "popularitat" d'un conjunt d'elements del dataset. On {lsh => rhs} indica que si selecciones lsh, seleccionen rhs.
 
-* La *confidence* ens parla de la probabilitat que s'escolti {rhs} si s'escolta {lhs} (lhs => rhs / lhs).
+* La *confidence* ens parla de la probabilitat que seleccionin {rhs} si seleccionan {lhs} (lhs => rhs / lhs).
 
-* El *lift* és un paràmetre que ens indica quan d'aletorietat hi ha a les regles. Un lift de 1 o menys ens indica que la regla és completament fruit de l'atzar. El lift ens diu eb una regla, com es produeix la regla en funció dels elements de la regla (support(lhs => rhs) / support(lhs) * support(rhs)).
+* El *lift* és un paràmetre que ens indica quan d'aletorietat hi ha a les regles. Un lift de 1 o menys ens indica que la regla és completament fruit de l'atzar. El lift ens diu en una regla, com es produeix la regla en funció dels elements de la regla (support(lhs => rhs) / support(lhs) * support(rhs)).
 
-Generem les regles per un support mínim de 0.01, confidence mínim de 0.4 i lift mínim de 3
+Generem les regles per un support mínim de 0.25 i confidence mínim de 0.4
 
 ```{r message= FALSE, warning=FALSE}
 rules <- apriori(speciality.transactions, parameter = list(support = 0.25, confidence = 0.4))
@@ -127,14 +126,15 @@ rules <- apriori(speciality.transactions, parameter = list(support = 0.25, confi
 inspect(head(sort(rules, by = "support"), 100))
 ```
 
-Amb aquesta ordenació per *confidence*, tenim una probabilitat alta que si tenen Familia tenen Divorcios. Es un exemple, el mateix passa amb la resta de les mostrades. En tots els casos el lift es molt superior a 1, per tant no hi ha aletorietat en els resultats.
+Amb aquesta ordenació per *confidence*, tenim una probabilitat alta que si tenen Familia tenen Divorcios. Es un exemple, el mateix passa amb la resta de les mostrades. En tots els casos el lift es molt superior a 1, per tant considerem que no hi ha aletorietat en els resultats.
 
 Aquestes regles tenen a més una probabilitat condicionada (confidence) relativament alta  > 40%
 
-Podem generar altres regles que impliquin un mínim de dos elements del lhs:
+Podem generar altres regles que impliquin un mínim de dos elements del lhs. Hem de reduïr el support i el confidence.
 
 ```{r message= FALSE, warning=FALSE}
-rules2 <- apriori(speciality.transactions, parameter = list(support = 0.05, confidence = 0.1, minlen=4))
+
+rules2 <- apriori(speciality.transactions, parameter = list(support = 0.01, confidence = 0.1, minlen=2))
 
 inspect(head(sort(rules2, by = "support"), 100))
 ```
